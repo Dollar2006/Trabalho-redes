@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euxo pipefail
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+apt-get install -y docker.io docker-compose-v2 git
+systemctl enable --now docker
+
+git clone ${repo_url} /opt/estoque
+cd /opt/estoque
+
+cat > .env <<'ENVEOF'
+DB_HOST=${db_host}
+DB_PORT=5432
+DB_NAME=estoque
+DB_USER=estoque
+DB_PASSWORD=${db_password}
+ENVEOF
+
+docker compose -f docker-compose.app.yml up -d --build

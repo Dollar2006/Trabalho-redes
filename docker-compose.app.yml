@@ -1,0 +1,21 @@
+services:
+  app1:
+    build: ./app
+    hostname: app1
+    restart: unless-stopped
+    env_file: .env
+  app2:
+    build: ./app
+    hostname: app2
+    restart: unless-stopped
+    env_file: .env
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app1
+      - app2

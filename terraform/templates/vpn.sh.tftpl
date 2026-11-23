@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euxo pipefail
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+apt-get install -y wireguard iptables
+
+umask 077
+mkdir -p /etc/wireguard
+wg genkey | tee /etc/wireguard/server_private.key | wg pubkey > /etc/wireguard/server_public.key
+chmod 644 /etc/wireguard/server_public.key
+
+IFACE=$(ip route show default | awk '{print $5}' | head -n1)
+
+cat > /etc/wireguard/wg0.conf <<WGEOF
+[Interface]
+Address = ${vpn_server_ip}/24
+ListenPort = 51820
+PrivateKey = $(cat /etc/wireguard/server_private.key)
+PostUp = iptables -t nat -A POSTROUTING -s ${vpn_network} -o $IFACE -j MASQUERADE
+PostDown = iptables -t nat -D POSTROUTING -s ${vpn_network} -o $IFACE -j MASQUERADE
+WGEOF
+
+echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-wireguard.conf
+sysctl --system
+systemctl enable --now wg-quick@wg0
