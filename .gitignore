@@ -4,5 +4,5 @@
 terraform.tfvars
 *.pem
 .env
-vpn/clientes/
+clientes/
 __pycache__/

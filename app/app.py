@@ -58,7 +58,6 @@ PAGE = """
  small{color:#666}
 </style>
 <h1>Controle de Estoque</h1>
-<h2>Seja bem vindo!</h2>
 <small>Atendido por: <b>{{ host }}</b> (recarregue e veja o load balancer alternar)</small>
 <h3>Novo produto</h3>
 <form method="post" action="/produtos">

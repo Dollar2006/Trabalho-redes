@@ -1,4 +1,0 @@
-# Copie para terraform.tfvars (que está no .gitignore) e preencha
-admin_cidr  = "200.200.200.200/32"
-repo_url    = "https://github.com/SEU_USUARIO/projeto-infra-estoque.git"
-db_password = "troque-esta-senha"
