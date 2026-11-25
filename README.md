@@ -1,14 +1,14 @@
 # Projeto de estoque: EC2 única, Terraform local e acesso só por VPN
 
-Uma EC2 na AWS (conta de estudante) roda o sistema inteiro. O IP público da EC2 pode ser entregue ao professor, mas ele **não consegue acessar nada**: só quem tem a chave da VPN entra.
+Uma EC2 na AWS roda o sistema inteiro e só pode ser acessada por VPN. O IP público pode ser divulgado, mas **ninguém de fora consegue acessar nada**: só quem tem a chave da VPN entra.
 
 ```
 Notebook ─► VPN WireGuard (UDP 51820) ─► EC2 (10.8.0.1): SSH e site na porta 8080
-Professor ─► IP público da EC2 ─► nada responde
+Terceiros ─► IP público da EC2 ─► nada responde
 Dentro da EC2: Nginx ─► app1 | app2 ─► Postgres (criados pelo Terraform + Docker)
 ```
 
-**Por que o professor não acessa:** o security group deixa aberta só a porta UDP 51820 (WireGuard), que não responde a quem não tem a chave. O SSH (porta 22) e o site (porta 8080) ficam fechados para a internet e só funcionam por dentro do túnel, no endereço `10.8.0.1`.
+**Por que ninguém de fora acessa:** o security group deixa aberta só a porta UDP 51820 (WireGuard), que não responde a quem não tem a chave. O SSH (porta 22) e o site (porta 8080) ficam fechados para a internet e só funcionam por dentro do túnel, no endereço `10.8.0.1`.
 
 ## O que tem no projeto
 
@@ -70,7 +70,7 @@ ec2/             setup-ec2.sh (instala Docker, Terraform e WireGuard na EC2)
     | Custom UDP | 51820 | Anywhere (0.0.0.0/0) |
 
 11. Em Storage, coloque 16 GiB e clique em **Launch instance**.
-12. Crie um IP fixo: EC2, **Elastic IPs**, Allocate Elastic IP address, Allocate. Selecione o IP, Actions, **Associate Elastic IP address**, escolha a instância `estoque` e confirme. **Esse é o IP que você envia ao professor.** Sem o IP elástico, o IP público muda toda vez que a instância é parada e a VPN do notebook quebra.
+12. Crie um IP fixo: EC2, **Elastic IPs**, Allocate Elastic IP address, Allocate. Selecione o IP, Actions, **Associate Elastic IP address**, escolha a instância `estoque` e confirme. **Esse é o IP público fixo da instância.** Sem o IP elástico, o IP público muda toda vez que a instância é parada e a VPN do notebook quebra.
 
 ### Fase B: preparar a EC2
 
@@ -133,14 +133,14 @@ ec2/             setup-ec2.sh (instala Docker, Terraform e WireGuard na EC2)
     - Linux: `nc -vz -w 3 IP_ELASTICO 22`
 
     Com a VPN **ativa**, `ssh ubuntu@10.8.0.1` continua funcionando.
-25. Envie o IP elástico ao professor.
+25. Pronto: o IP elástico pode ser divulgado, e quem não tem a chave da VPN não consegue acessar.
 
 Se ficar sem acesso por engano, adicione de novo a regra SSH com origem My IP no security group.
 
-## Para a apresentação
+## Demonstração
 
 - Mostre as regras de entrada do security group: só a UDP 51820.
-- Peça ao professor para tentar SSH no IP público e mostre o timeout.
+- Tente o SSH no IP público a partir de uma rede sem a VPN e mostre o timeout.
 - Com a VPN ativa, mostre o site em `10.8.0.1:8080`, o `docker ps` na EC2 e o Terraform: `docker rm -f estoque-app1`, depois `terraform plan` (detecta a falta) e `terraform apply` (recria).
 - Explique por que o WireGuard não responde sem chave, por que o Terraform usa o provider Docker aqui e a limitação: uma EC2 só é ponto único de falha, e o site usa HTTP sem TLS.
 
